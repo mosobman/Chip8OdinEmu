@@ -1,9 +1,9 @@
-package main
+package minifb
 
 import "core:c"
 
 when ODIN_OS == .Windows do foreign import minifb {
-    "../lib/minifb.lib",
+    "../../lib/minifb.lib",
     "system:opengl32.lib",
     "system:kernel32.lib",
     "system:winmm.lib",
@@ -13,14 +13,14 @@ when ODIN_OS == .Windows do foreign import minifb {
 //TODO// Add Linux if I ever get a linux-based device
 
 // Enums
-mfb_update_state :: enum c.int {
+update_state :: enum c.int {
     STATE_OK             =  0,
     STATE_EXIT           = -1,
     STATE_INVALID_WINDOW = -2,
     STATE_INVALID_BUFFER = -3,
     STATE_INTERNAL_ERROR = -4,
 };
-mfb_mouse_button :: enum c.uint {
+mouse_button :: enum c.uint {
     MOUSE_BTN_0, // No mouse button
     MOUSE_BTN_1,
     MOUSE_BTN_2,
@@ -34,7 +34,7 @@ mfb_mouse_button :: enum c.uint {
     MOUSE_MIDDLE = MOUSE_BTN_3
 };
 
-mfb_key :: enum c.int {
+key :: enum c.int {
     KB_KEY_UNKNOWN        = -1,  // Unknown
     KB_KEY_SPACE          = 32,  // Space
     KB_KEY_APOSTROPHE     = 39,  // Apostrophe
@@ -159,7 +159,7 @@ mfb_key :: enum c.int {
     KB_KEY_LAST           = KB_KEY_MENU
 };
 
-mfb_key_mod :: enum c.uint {
+key_mod :: enum c.uint {
     KB_MOD_NONE         = 0x0000,
     KB_MOD_SHIFT        = 0x0001,
     KB_MOD_CONTROL      = 0x0002,
@@ -169,7 +169,7 @@ mfb_key_mod :: enum c.uint {
     KB_MOD_NUM_LOCK     = 0x0020
 };
 
-mfb_window_flags :: enum c.uint {
+window_flags :: enum c.uint {
     WF_NONE               = 0x00,
     WF_RESIZABLE          = 0x01,
     WF_FULLSCREEN         = 0x02,
@@ -179,90 +179,92 @@ mfb_window_flags :: enum c.uint {
 };
 
 // Opaque pointer
-mfb_window :: struct {}
-mfb_timer :: struct {}
+window :: struct {}
+timer :: struct {}
 
 
 // Event callbacks
-mfb_active_func           :: proc(window: ^mfb_window, isActive: c.bool);
-mfb_resize_func           :: proc(window: ^mfb_window, width: c.int, height: c.int);
-mfb_close_func            :: proc(window: ^mfb_window) -> c.bool;
-mfb_keyboard_func         :: proc(window: ^mfb_window, key: mfb_key, mod: mfb_key_mod, isPressed: c.bool);
-mfb_char_input_func       :: proc(window: ^mfb_window, code: c.uint);
-mfb_mouse_button_func     :: proc(window: ^mfb_window, button: mfb_mouse_button, mod: mfb_key_mod, isPressed: c.bool);
-mfb_mouse_move_func       :: proc(window: ^mfb_window, x: c.int, y: c.int);
-mfb_mouse_scroll_func     :: proc(window: ^mfb_window, mod: mfb_key_mod, deltaX: c.float, deltaY: c.float);
+active_func           :: proc(window: ^window, isActive: c.bool);
+resize_func           :: proc(window: ^window, width: c.int, height: c.int);
+close_func            :: proc(window: ^window) -> c.bool;
+keyboard_func         :: proc(window: ^window, key: key, mod: key_mod, isPressed: c.bool);
+char_input_func       :: proc(window: ^window, code: c.uint);
+mouse_button_func     :: proc(window: ^window, button: mouse_button, mod: key_mod, isPressed: c.bool);
+mouse_move_func       :: proc(window: ^window, x: c.int, y: c.int);
+mouse_scroll_func     :: proc(window: ^window, mod: key_mod, deltaX: c.float, deltaY: c.float);
+
+@(link_prefix="mfb_")
 foreign minifb {
     // Create a window that is used to display the buffer sent into the mfb_update function, returns 0 if fails
-    mfb_open        :: proc(title: cstring, width: c.uint, height: c.uint) -> ^mfb_window ---;
-    mfb_open_ex     :: proc(title: cstring, width: c.uint, height: c.uint, flags: c.uint) -> ^mfb_window ---;
+    open        :: proc(title: cstring, width: c.uint, height: c.uint) -> ^window ---;
+    open_ex     :: proc(title: cstring, width: c.uint, height: c.uint, flags: c.uint) -> ^window ---;
 
     // Update the display
     // Input buffer is assumed to be a 32-bit buffer of the size given in the open call
     // Will return a negative status if something went wrong or the user want to exit
     // Also updates the window events
-    mfb_update        :: proc(window: ^mfb_window, buffer: rawptr) -> mfb_update_state ---;
-    mfb_update_ex     :: proc(window: ^mfb_window, buffer: rawptr, width: c.uint, height: c.uint) -> mfb_update_state ---;
+    update        :: proc(window: ^window, buffer: rawptr) -> update_state ---;
+    update_ex     :: proc(window: ^window, buffer: rawptr, width: c.uint, height: c.uint) -> update_state ---;
     // Only updates the window events
-    mfb_update_events :: proc(window: ^mfb_window) -> mfb_update_state ---;
+    update_events :: proc(window: ^window) -> update_state ---;
 
     // Close the window
-    mfb_close              :: proc(window: ^mfb_window) ---;
+    close              :: proc(window: ^window) ---;
     
     // Set user data
-    mfb_set_user_data    :: proc(window: ^mfb_window, user_data: rawptr) ---;
-    mfb_get_user_data    :: proc(window: ^mfb_window) -> rawptr ---;
+    set_user_data    :: proc(window: ^window, user_data: rawptr) ---;
+    get_user_data    :: proc(window: ^window) -> rawptr ---;
     
     // Set viewport (useful when resize)
-    mfb_set_viewport            :: proc(window: ^mfb_window, offset_x: c.uint, offset_y: c.uint, width: c.uint, height: c.uint) -> c.bool ---;
+    set_viewport            :: proc(window: ^window, offset_x: c.uint, offset_y: c.uint, width: c.uint, height: c.uint) -> c.bool ---;
     // Let mfb to calculate the best fit from your framebuffer original size
-    mfb_set_viewport_best_fit   :: proc(window: ^mfb_window, old_width: c.uint, old_height: c.uint) -> c.bool ---;
+    set_viewport_best_fit   :: proc(window: ^window, old_width: c.uint, old_height: c.uint) -> c.bool ---;
     
     // DPI
-    // [Deprecated]: Probably a better name will be mfb_get_monitor_scale
-    mfb_get_monitor_dpi    :: proc(window: ^mfb_window, dpi_x: ^c.float, dpi_y: ^c.float) ---;
+    // [Deprecated]: Probably a better name will be get_monitor_scale
+    get_monitor_dpi    :: proc(window: ^window, dpi_x: ^c.float, dpi_y: ^c.float) ---;
     // Use this instead
-    mfb_get_monitor_scale  :: proc(window: ^mfb_window, scale_x: ^c.float, scale_y: ^c.float) ---;
+    get_monitor_scale  :: proc(window: ^window, scale_x: ^c.float, scale_y: ^c.float) ---;
 
     // Show/hide cursor
-    mfb_show_cursor :: proc(window: ^mfb_window, show: c.bool) ---;
+    show_cursor :: proc(window: ^window, show: c.bool) ---;
 
     // Callbacks
-    mfb_set_active_callback         :: proc(window: ^mfb_window, callback: mfb_active_func) ---;
-    mfb_set_resize_callback         :: proc(window: ^mfb_window, callback: mfb_resize_func) ---;
-    mfb_set_close_callback          :: proc(window: ^mfb_window, callback: mfb_close_func) ---;
-    mfb_set_keyboard_callback       :: proc(window: ^mfb_window, callback: mfb_keyboard_func) ---;
-    mfb_set_char_input_callback     :: proc(window: ^mfb_window, callback: mfb_char_input_func) ---;
-    mfb_set_mouse_button_callback   :: proc(window: ^mfb_window, callback: mfb_mouse_button_func) ---;
-    mfb_set_mouse_move_callback     :: proc(window: ^mfb_window, callback: mfb_mouse_move_func) ---;
-    mfb_set_mouse_scroll_callback   :: proc(window: ^mfb_window, callback: mfb_mouse_scroll_func) ---;
+    set_active_callback         :: proc(window: ^window, callback: active_func) ---;
+    set_resize_callback         :: proc(window: ^window, callback: resize_func) ---;
+    set_close_callback          :: proc(window: ^window, callback: close_func) ---;
+    set_keyboard_callback       :: proc(window: ^window, callback: keyboard_func) ---;
+    set_char_input_callback     :: proc(window: ^window, callback: char_input_func) ---;
+    set_mouse_button_callback   :: proc(window: ^window, callback: mouse_button_func) ---;
+    set_mouse_move_callback     :: proc(window: ^window, callback: mouse_move_func) ---;
+    set_mouse_scroll_callback   :: proc(window: ^window, callback: mouse_scroll_func) ---;
 
     // Getters
-    mfb_get_key_name  :: proc(key: mfb_key) -> cstring ---;
+    get_key_name  :: proc(key: key) -> cstring ---;
 
-    mfb_is_window_active         :: proc(window: ^mfb_window) -> c.bool ---;
-    mfb_get_window_width         :: proc(window: ^mfb_window) -> c.uint ---;
-    mfb_get_window_height        :: proc(window: ^mfb_window) -> c.uint ---;
-    mfb_get_mouse_x              :: proc(window: ^mfb_window) -> c.int ---;             // Last mouse pos X
-    mfb_get_mouse_y              :: proc(window: ^mfb_window) -> c.int ---;             // Last mouse pos Y
-    mfb_get_mouse_scroll_x       :: proc(window: ^mfb_window) -> c.float ---;      // Mouse wheel X as a sum. When you call this function it resets.
-    mfb_get_mouse_scroll_y       :: proc(window: ^mfb_window) -> c.float ---;      // Mouse wheel Y as a sum. When you call this function it resets.
-    mfb_get_mouse_button_buffer  :: proc(window: ^mfb_window) -> ^c.uint8_t ---; // One byte for every button. Press (1), Release 0. (up to 8 buttons)
-    mfb_get_key_buffer           :: proc(window: ^mfb_window) -> ^c.uint8_t ---;          // One byte for every key. Press (1), Release 0.
+    is_window_active         :: proc(window: ^window) -> c.bool ---;
+    get_window_width         :: proc(window: ^window) -> c.uint ---;
+    get_window_height        :: proc(window: ^window) -> c.uint ---;
+    get_mouse_x              :: proc(window: ^window) -> c.int ---;             // Last mouse pos X
+    get_mouse_y              :: proc(window: ^window) -> c.int ---;             // Last mouse pos Y
+    get_mouse_scroll_x       :: proc(window: ^window) -> c.float ---;      // Mouse wheel X as a sum. When you call this function it resets.
+    get_mouse_scroll_y       :: proc(window: ^window) -> c.float ---;      // Mouse wheel Y as a sum. When you call this function it resets.
+    get_mouse_button_buffer  :: proc(window: ^window) -> ^c.uint8_t ---; // One byte for every button. Press (1), Release 0. (up to 8 buttons)
+    get_key_buffer           :: proc(window: ^window) -> ^c.uint8_t ---;          // One byte for every key. Press (1), Release 0.
 
     // FPS
-    mfb_set_target_fps  :: proc(fps: c.uint32_t) ---;
-    mfb_get_target_fps  :: proc() -> c.uint ---;
-    mfb_wait_sync       :: proc(window: ^mfb_window) -> c.bool ---;
+    set_target_fps  :: proc(fps: c.uint32_t) ---;
+    get_target_fps  :: proc() -> c.uint ---;
+    wait_sync       :: proc(window: ^window) -> c.bool ---;
 
     // Timer
-    mfb_timer_create             :: proc() -> ^mfb_timer ---;
-    mfb_timer_destroy            :: proc(tmr: ^mfb_timer) ---;
-    mfb_timer_reset              :: proc(tmr: ^mfb_timer) ---;
-    mfb_timer_compensated_reset  :: proc(tmr: ^mfb_timer) ---;
-    mfb_timer_now                :: proc(tmr: ^mfb_timer) -> c.double ---;
-    mfb_timer_delta              :: proc(tmr: ^mfb_timer) -> c.double ---;
-    mfb_timer_get_frequency      :: proc() -> c.double ---;
-    mfb_timer_get_resolution     :: proc() -> c.double ---;
+    timer_create             :: proc() -> ^timer ---;
+    timer_destroy            :: proc(tmr: ^timer) ---;
+    timer_reset              :: proc(tmr: ^timer) ---;
+    timer_compensated_reset  :: proc(tmr: ^timer) ---;
+    timer_now                :: proc(tmr: ^timer) -> c.double ---;
+    timer_delta              :: proc(tmr: ^timer) -> c.double ---;
+    timer_get_frequency      :: proc() -> c.double ---;
+    timer_get_resolution     :: proc() -> c.double ---;
 
 }
