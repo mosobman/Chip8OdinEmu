@@ -2,7 +2,7 @@ package main
 
 import "core:c"
 
-foreign import minifb {
+when ODIN_OS == .Windows do foreign import minifb {
     "../lib/minifb.lib",
     "system:opengl32.lib",
     "system:kernel32.lib",
@@ -10,6 +10,7 @@ foreign import minifb {
     "system:gdi32.lib",
     "system:user32.lib",
 }
+//TODO// Add Linux if I ever get a linux-based device
 
 // Enums
 mfb_update_state :: enum c.int {
