@@ -10,7 +10,7 @@ when ODIN_OS == .Windows do foreign import minifb {
     "system:gdi32.lib",
     "system:user32.lib",
 }
-//TODO// Add Linux if I ever get a linux-based device
+//TODO// Add Linux and MacOS if I ever get a device to test it on
 
 // Enums
 update_state :: enum c.int {
